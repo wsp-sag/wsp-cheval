@@ -74,6 +74,11 @@ class ChoiceModel(object):
             table = self._cached_utils
         return table
 
+    @property
+    def partial_utilities(self) -> pd.DataFrame:
+        """Get a copy of the partial utilties table"""
+        return self._partial_utilities.copy(deep=True)
+
     # region Tree operations
 
     def _create_node(self, name: str, logsum_scale: float, parent: ChoiceNode = None) -> ChoiceNode:
