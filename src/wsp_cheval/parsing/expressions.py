@@ -14,7 +14,7 @@ from .expr_items import ChainedSymbol
 
 
 def _split_filter(e: str) -> Tuple[str, Optional[str]]:
-    parts = e.split('@')
+    parts = e.split("@")
     if len(parts) == 1:
         return e, None
 
@@ -36,15 +36,21 @@ class Expression(object):
     symbols: Set[str] = attr.ib()
 
     @staticmethod
-    def parse(e: str, prior_simple: Set[str] = None, prior_chained: Set[str] = None, mode='cheval') -> Expression:
+    def parse(e: str, prior_simple: Set[str] = None, prior_chained: Set[str] = None, mode="cheval") -> Expression:
         split_e, filter_ = _split_filter(e)
 
-        tree = ast.parse(split_e, mode='eval').body
+        tree = ast.parse(split_e, mode="eval").body
         transformer = ExpressionParser(prior_simple, prior_chained, mode=mode)
         new_tree = transformer.visit(tree)
 
-        new_e = Expression(e, astor.to_source(new_tree), transformer.chained_symbols, transformer.dict_literals,
-                           filter_, transformer.visited_simple)
+        new_e = Expression(
+            e,
+            astor.to_source(new_tree),
+            transformer.chained_symbols,
+            transformer.dict_literals,
+            filter_,
+            transformer.visited_simple,
+        )
         return new_e
 
     @property
@@ -54,7 +60,7 @@ class Expression(object):
     def _prepare_dict_literals(self, choice_index: pd.Index, local_dict: dict):
         # Prepares dict literals for use in evaluation, applying rules for special key names
         for substitution, raw_literal in self.dict_literals.items():
-            new_array = np.zeros((1, len(choice_index)), dtype='f8')
+            new_array = np.zeros((1, len(choice_index)), dtype="f8")
 
             for key, val in raw_literal.items():
                 self._insert_dict_val(key, choice_index, val, new_array)
@@ -72,7 +78,7 @@ class Expression(object):
             loc = choice_index.get_loc(key[0])
             new_array[0, loc] = val
         else:
-            '''
+            """
             Dotted dict literals require care to ensure explicit reindexing with nested logit models. For example,
             specifying the key "A.B" in a 3-level model (where "A.B.C" exists and is meaningful) there is need to
             disambiguate between the node with the unique ID of ('A', 'B', '.') (i.e. the parent node of "A.B.C"),
@@ -85,16 +91,16 @@ class Expression(object):
 
             The edge case "A._.B" (where an underscore occurs in the middle of a name) is technically meaningless,
             so the code below assumes that "A._" was meant instead
-            '''
+            """
             new_key = []
             partial_key = False
             for sub_key in key:
-                if sub_key == '_':
+                if sub_key == "_":
                     partial_key = True
                     break
                 new_key.append(str(sub_key))
 
-            delta = ['.'] * (max_levels - len(new_key))
+            delta = ["."] * (max_levels - len(new_key))
 
             if partial_key:
                 locs = choice_index.get_loc(tuple(new_key))

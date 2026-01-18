@@ -7,7 +7,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from pandas.api.types import is_integer_dtype
 
-_USE_TO_NUMPY = hasattr(pd.Series, 'to_numpy')
+_USE_TO_NUMPY = hasattr(pd.Series, "to_numpy")
 
 
 def to_numpy(frame_or_series: Union[pd.DataFrame, pd.Series, pd.Index], ignore_check: bool = False) -> NDArray:
@@ -30,33 +30,33 @@ def convert_series(s: pd.Series, allow_raw: bool = False) -> NDArray:
             return s.to_numpy()[...]
         else:  # if NA values are present, yet pandas keeps the series as an IntegerArray instead of float
             try:
-                return np.asarray(s, dtype='float')[...]
+                return np.asarray(s, dtype="float")[...]
             except ValueError:
-                return s.to_numpy(dtype='float', na_value=np.nan)[...]  # pandas >= 1.0.0
-    elif dtype.name == 'category':
+                return s.to_numpy(dtype="float", na_value=np.nan)[...]  # pandas >= 1.0.0
+    elif dtype.name == "category":
         # Categorical column
         categorical = s.values
 
         category_index = categorical.categories
-        if category_index.dtype.name == 'object':
+        if category_index.dtype.name == "object":
             max_len = category_index.str.len().max()
-            typename = f'S{max_len}'
+            typename = f"S{max_len}"
         else:
             typename = category_index.dtype
 
         return categorical.astype(typename)
-    elif dtype.name == 'object':
+    elif dtype.name == "object":
         # Object or text column
         # This is much slower than other dtypes, but it can't be helped. For now, users should just use Categoricals
         max_length = s.str.len().max()
         if np.isnan(max_length):
-            raise TypeError('Could not get max string length')
+            raise TypeError("Could not get max string length")
 
-        return s.to_numpy(dtype=f'S{max_length}') if _USE_TO_NUMPY else s.values.astype(f'S{max_length}')
+        return s.to_numpy(dtype=f"S{max_length}") if _USE_TO_NUMPY else s.values.astype(f"S{max_length}")
     elif np.issubdtype(dtype, np.datetime64):
-        raise TypeError('Datetime columns are not supported')
+        raise TypeError("Datetime columns are not supported")
     elif np.issubdtype(dtype, np.timedelta64):
-        raise TypeError('Timedelta columns are not supported')
+        raise TypeError("Timedelta columns are not supported")
     try:
         return to_numpy(s)[...]
     except AttributeError:

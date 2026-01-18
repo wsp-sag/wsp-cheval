@@ -1,0 +1,50 @@
+[project]
+name = "wsp-cheval"
+dynamic = ["version"]
+authors = [
+    { name = "Brian Cheung", email = "brian.cheung@wsp.com" },
+    { name = "Ashlyn Clarry", email = "ashlyn.clarry@wsp.com" },
+]
+description = "High-performance discrete-choice (logit) travel demand model evaluation"
+readme = "README.md"
+license = "BSD-3-Clause"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3"
+]
+requires-python = ">=3.7,<3.11"
+dependencies = [
+    "pandas>=0.24,<1.5",
+    "numpy>=1.20,<2",
+    "astor",
+    "numba>=0.48",
+    "numexpr",
+    "attrs>=19.3"
+]
+
+[project.urls]
+Homepage = "https://github.com/wsp-sag/cheval"
+Issues = "https://github.com/wsp-sag/cheval/issues"
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "build>=1.1,<2",
+    "twine>=4.0,<7"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+version_file = "src/wsp_cheval/_version.py"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = "src"

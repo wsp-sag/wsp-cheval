@@ -23,31 +23,40 @@ if TYPE_CHECKING:
 
 class ChoiceNode(object):
 
-    def __init__(self, root: ChoiceModel, name: str, parent: ChoiceNode = None, logsum_scale: float = 1.0,
-                 level: int = 0):
-        assert '.' not in name, 'Choice node name cannot contain "."'
-        assert name != '_', 'The name "_" by itself is reserved, but choice names can include it (.e.g. "choice_2")'
-        assert 0.0 < logsum_scale <= 1.0, "Logsum scale must be in hte interval (0, 1], got %s" % logsum_scale
+    def __init__(
+        self,
+        root: ChoiceModel,
+        name: str,
+        parent: ChoiceNode = None,
+        logsum_scale: float = 1.0,
+        level: int = 0,
+    ):
+        assert "." not in name, 'Choice node name cannot contain "."'
+        assert name != "_", 'The name "_" by itself is reserved, but choice names can include it (.e.g. "choice_2")'
+        assert 0.0 < logsum_scale <= 1.0, f"Logsum scale must be in the interval (0, 1], got {logsum_scale}"
 
-        self._root: 'ChoiceModel' = root
+        self._root: ChoiceModel = root
 
         self._name: str = str(name)
         self._parent = parent
         self._logsum_scale = None
         self.logsum_scale = logsum_scale
         self._level = level
-        self._children: Dict[str, 'ChoiceNode'] = {}
+        self._children: Dict[str, ChoiceNode] = {}
 
-    def __str__(self): return self.name
+    def __str__(self):
+        return self.name
 
-    def __repr__(self): return f"ChoiceNode({self.name})"
+    def __repr__(self):
+        return f"ChoiceNode({self.name})"
 
     @property
-    def logsum_scale(self) -> float: return self._logsum_scale
+    def logsum_scale(self) -> float:
+        return self._logsum_scale
 
     @logsum_scale.setter
     def logsum_scale(self, value):
-        assert 0.0 < value <= 1.0, "Logsum scale must be in hte interval (0, 1], got %s" % value
+        assert 0.0 < value <= 1.0, f"Logsum scale must be in the interval (0, 1], got {value}"
         self._logsum_scale = float(value)
 
     @property
@@ -77,7 +86,7 @@ class ChoiceNode(object):
         while node is not None:
             ids.appendleft(node.name)
             node = node.parent
-        return '.'.join(ids)
+        return ".".join(ids)
 
     def children(self):
         yield from self._children.values()
@@ -91,16 +100,16 @@ class ChoiceNode(object):
         return max_level
 
     def nested_id(self, max_level: int):
-        retval = ['.'] * max_level
+        retval = ["."] * max_level
         if self._parent is None:
             retval[0] = self._name
         else:
             cutoff = self._level + 1
-            retval[: cutoff] = self._parent.nested_id(max_level)[: cutoff]
+            retval[:cutoff] = self._parent.nested_id(max_level)[:cutoff]
             retval[cutoff - 2] = self.name
         return tuple(retval)
 
-    def add_choice(self, name: str, logsum_scale: float = 1.0) -> 'ChoiceNode':
+    def add_choice(self, name: str, logsum_scale: float = 1.0) -> ChoiceNode:
         node = self._root._create_node(name, logsum_scale, parent=self)
         self._children[name] = node
         return node
@@ -108,7 +117,10 @@ class ChoiceNode(object):
     def clear(self):
         raise NotImplementedError()
 
+
 # endregion
+
+
 # region Expression containers
 
 
@@ -125,7 +137,7 @@ class ExpressionSubGroup:
         for chain_name in e.chains.keys():
             self.chained_symbols.add(chain_name)
 
-    def __add__(self, other: 'ExpressionSubGroup') -> 'ExpressionSubGroup':
+    def __add__(self, other: ExpressionSubGroup) -> ExpressionSubGroup:
         new = ExpressionSubGroup(self.name)
         for e in self.expressions:
             new.append(e)
@@ -196,7 +208,7 @@ class ExpressionGroup(object):
         for subgroup in self._subgroups.values():
             yield from subgroup
 
-    def __add__(self, other: 'ExpressionGroup') -> 'ExpressionGroup':
+    def __add__(self, other: ExpressionGroup) -> ExpressionGroup:
         new = ExpressionGroup()
 
         new._simple_symbols = self._simple_symbols | other._simple_symbols
@@ -225,7 +237,7 @@ class ExpressionGroup(object):
     def drop_group(self, name: Hashable):
         del self._subgroups[name]
 
-    def copy(self) -> 'ExpressionGroup':
+    def copy(self) -> ExpressionGroup:
         new = ExpressionGroup()
         for e in self._ungrouped_expressions:
             new._ungrouped_expressions.append(e)
@@ -239,34 +251,50 @@ class ExpressionGroup(object):
             new._subgroups[name] = new_sg
         return new
 
+
 # endregion
+
+
 # region Symbols for scope
 
 
 class AbstractSymbol(object, metaclass=abc.ABCMeta):
-    def __init__(self, parent: 'ChoiceModel', name: str):
+    def __init__(
+        self,
+        parent: ChoiceModel,
+        name: str,
+    ):
         self._parent = parent
         self._name = name
 
     @abc.abstractmethod
-    def assign(self, data): pass
+    def assign(self, data):
+        pass
 
     @abc.abstractmethod
-    def _get(self, **kwargs) -> Union[float, np.ndarray]: pass
+    def _get(self, **kwargs) -> Union[float, np.ndarray]:
+        pass
 
     @abc.abstractmethod
-    def empty(self): pass
+    def empty(self):
+        pass
 
     @abc.abstractmethod
-    def copy(self, new_parent: 'ChoiceModel', copy_data, row_mask) -> 'AbstractSymbol': pass
+    def copy(self, new_parent: ChoiceModel, copy_data, row_mask) -> AbstractSymbol:
+        pass
 
     @property
     @abc.abstractmethod
-    def filled(self) -> bool: pass
+    def filled(self) -> bool:
+        pass
 
 
 class NumberSymbol(AbstractSymbol):
-    def __init__(self, parent: 'ChoiceModel', name: str):
+    def __init__(
+        self,
+        parent: ChoiceModel,
+        name: str,
+    ):
         super().__init__(parent, name)
         self._val = None
 
@@ -278,9 +306,10 @@ class NumberSymbol(AbstractSymbol):
             raise ModelNotReadyError()
         return self._val
 
-    def empty(self): self._val = None
+    def empty(self):
+        self._val = None
 
-    def copy(self, new_parent: 'ChoiceModel', copy_data, row_mask):
+    def copy(self, new_parent: ChoiceModel, copy_data, row_mask):
         new = NumberSymbol(new_parent, self._name)
         if copy_data:
             new._val = self._val
@@ -288,12 +317,18 @@ class NumberSymbol(AbstractSymbol):
         return new
 
     @property
-    def filled(self): return self._val is not None
+    def filled(self):
+        return self._val is not None
 
 
 class VectorSymbol(AbstractSymbol):
 
-    def __init__(self, parent: 'ChoiceModel', name: str, orientation: int):
+    def __init__(
+        self,
+        parent: ChoiceModel,
+        name: str,
+        orientation: int,
+    ):
         super().__init__(parent, name)
 
         assert orientation in {0, 1}
@@ -326,9 +361,10 @@ class VectorSymbol(AbstractSymbol):
             raise ModelNotReadyError
         return self._raw_array
 
-    def empty(self): self._raw_array = None
+    def empty(self):
+        self._raw_array = None
 
-    def copy(self, new_parent: 'ChoiceModel', copy_data, row_mask):
+    def copy(self, new_parent: ChoiceModel, copy_data, row_mask):
         new = VectorSymbol(new_parent, self._name, self._orientation)
         if copy_data and self._raw_array is not None:
 
@@ -342,13 +378,20 @@ class VectorSymbol(AbstractSymbol):
         return new
 
     @property
-    def filled(self): return self._raw_array is not None
+    def filled(self):
+        return self._raw_array is not None
 
 
 class TableSymbol(AbstractSymbol):
 
-    def __init__(self, parent: 'ChoiceModel', name: str, orientation: int, mandatory_attributes: Set[str] = None,
-                 allow_links: bool = True):
+    def __init__(
+        self,
+        parent: ChoiceModel,
+        name: str,
+        orientation: int,
+        mandatory_attributes: Set[str] = None,
+        allow_links: bool = True,
+    ):
         super().__init__(parent, name)
         assert orientation in {0, 1}
         self._orientation = orientation
@@ -401,7 +444,7 @@ class TableSymbol(AbstractSymbol):
     def empty(self):
         self._table = None
 
-    def copy(self, new_parent: 'ChoiceModel', copy_data, row_mask):
+    def copy(self, new_parent: ChoiceModel, copy_data, row_mask):
         new = TableSymbol(new_parent, self._name, self._orientation, self._mandatory_attributes, self._allow_links)
         if copy_data and self._table is not None:
             if self._orientation == 0 and row_mask is not None:
@@ -411,13 +454,21 @@ class TableSymbol(AbstractSymbol):
         return new
 
     @property
-    def filled(self): return self._table is not None
+    def filled(self):
+        return self._table is not None
 
 
 class MatrixSymbol(AbstractSymbol):
 
-    def __init__(self, parent: 'ChoiceModel', name: str, orientation: int = 0, reindex_cols=True, reindex_rows=True,
-                 fill_value=0):
+    def __init__(
+        self,
+        parent: ChoiceModel,
+        name: str,
+        orientation: int = 0,
+        reindex_cols=True,
+        reindex_rows=True,
+        fill_value=0,
+    ):
         super().__init__(parent, name)
         self._matrix: Optional[np.ndarray] = None
         assert orientation in {0, 1}
@@ -469,13 +520,21 @@ class MatrixSymbol(AbstractSymbol):
         else:
             raise TypeError(type(data))
 
-    def _get(self): return self._matrix
+    def _get(self):
+        return self._matrix
 
-    def empty(self): self._matrix = None
+    def empty(self):
+        self._matrix = None
 
-    def copy(self, new_parent: 'ChoiceModel', copy_data, row_mask):
-        new = MatrixSymbol(new_parent, self._name, self._orientation, self._reindex_cols, self._reindex_rows,
-                           fill_value=self._fill_value)
+    def copy(self, new_parent: ChoiceModel, copy_data, row_mask):
+        new = MatrixSymbol(
+            new_parent,
+            self._name,
+            self._orientation,
+            self._reindex_cols,
+            self._reindex_rows,
+            fill_value=self._fill_value,
+        )
         if copy_data and self._matrix is not None:
             if row_mask is not None:
                 new._matrix = self._matrix[row_mask, :]
@@ -484,6 +543,8 @@ class MatrixSymbol(AbstractSymbol):
         return new
 
     @property
-    def filled(self): return self._matrix is not None
+    def filled(self):
+        return self._matrix is not None
+
 
 # endregion

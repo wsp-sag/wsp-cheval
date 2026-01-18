@@ -1,4 +1,5 @@
 """Module for AST Transformer subclass which specially-parses utility expressions"""
+
 import ast
 from collections import deque
 from typing import Dict, Set, Tuple, Union
@@ -12,13 +13,19 @@ from .exceptions import UnsupportedSyntaxError
 from .expr_items import ChainedSymbol, EvaluationMode
 
 # Only nodes used in expressions are included, due to the limited parsing
-_UNSUPPORTED_NODES: Tuple[type] = (ast.Load, ast.Store, ast.Del, ast.IfExp, ast.Subscript, ast.ListComp, ast.DictComp,
-                                   ast.Starred)
-_NAN_REPRESENTATIONS = {'none', 'nan'}
+_UNSUPPORTED_NODES: Tuple[type] = (
+    ast.Load,
+    ast.Store,
+    ast.Del,
+    ast.IfExp,
+    ast.Subscript,
+    ast.ListComp,
+    ast.DictComp,
+    ast.Starred,
+)
+_NAN_REPRESENTATIONS = {"none", "nan"}
 _NUMEXPR_FUNCTIONS = set(nee.functions.keys())
-_SUPPORTED_AGGREGATIONS = {
-    'count', 'first', 'last', 'max', 'min', 'mean', 'median', 'prod', 'std', 'sum', 'var'
-}
+_SUPPORTED_AGGREGATIONS = {"count", "first", "last", "max", "min", "mean", "median", "prod", "std", "sum", "var"}
 
 Number = Union[int, float, np.float64]
 
@@ -125,7 +132,7 @@ class ExpressionParser(ast.NodeTransformer):
 
         node.args = [self.__get_visitor(arg)(arg) for arg in node.args]
         node.starargs = None
-        if not hasattr(node, 'kwargs'):
+        if not hasattr(node, "kwargs"):
             node.kwargs = None
 
         return node
@@ -137,9 +144,9 @@ class ExpressionParser(ast.NodeTransformer):
     @staticmethod
     def __get_dict_key(node) -> tuple:
         if isinstance(node, ast.Name):
-            return node.id,
+            return (node.id,)
         if isinstance(node, ast.Str):
-            return node.s,
+            return (node.s,)
         if isinstance(node, ast.Attribute):
             keylist = deque()
             while not isinstance(node, ast.Name):
@@ -165,7 +172,7 @@ class ExpressionParser(ast.NodeTransformer):
             elif length <= max_level:
                 # Applies to top-level
                 for _ in range(max_level - length):
-                    converted.append('.')
+                    converted.append(".")
                 resovled_keys.append(tuple(converted))
             else:
                 raise NotImplementedError("This should never happen. Length=%s Max length=%s" % (length, max_level))
@@ -175,7 +182,7 @@ class ExpressionParser(ast.NodeTransformer):
         if not self.mode != EvaluationMode.UTILITIES:
             raise UnsupportedSyntaxError("Dict literals not allowed in this context")
 
-        substitution = '__dict%s' % len(self.dict_literals)
+        substitution = "__dict%s" % len(self.dict_literals)
         new_node = ast.Name(substitution, ast.Load())
 
         try:
@@ -259,9 +266,9 @@ class ExpressionParser(ast.NodeTransformer):
         if func_name not in _SUPPORTED_AGGREGATIONS:
             raise UnsupportedSyntaxError("Aggregation method '%s' is not supported." % func_name)
 
-        if not hasattr(call_node, 'starargs'):
+        if not hasattr(call_node, "starargs"):
             call_node.starargs = None
-        if not hasattr(call_node, 'kwargs'):
+        if not hasattr(call_node, "kwargs"):
             call_node.kwargs = None
 
         if len(call_node.keywords) > 0:

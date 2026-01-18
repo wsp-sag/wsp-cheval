@@ -1,9 +1,10 @@
 """Collection of common classes to store more complex substitutions (e.g. LinkedDataFrame lookup)"""
+
 from collections import deque, namedtuple
 from enum import Enum
-from typing import Dict, Tuple
+from typing import Dict, Generator, Tuple
 
-ChainTuple = namedtuple("ChainTuple", ['chain', 'func', 'args', 'withfunc'])
+ChainTuple = namedtuple("ChainTuple", ["chain", "func", "args", "withfunc"])
 
 
 class ChainedSymbol(object):
@@ -26,10 +27,10 @@ class ChainedSymbol(object):
     def _make_sub(self, *, prepend_at=False) -> str:
         s1 = "__sub_%s%s" % (self._name, len(self._lookups))
         if prepend_at:
-            return '@' + s1
+            return "@" + s1
         return s1
 
-    def items(self) -> Tuple[str, ChainTuple]:
+    def items(self) -> Generator[Tuple[str, ChainTuple], None, None]:
         yield from self._lookups.items()
 
 

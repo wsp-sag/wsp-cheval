@@ -1,6 +1,6 @@
 import numpy as _np
 
-NAN_STR = 'NAN'
+NAN_STR = "NAN"
 NAN_VAL = _np.nan
 OUT_STR = "OUT"
 NEG_INF_STR = "NEG_INF"

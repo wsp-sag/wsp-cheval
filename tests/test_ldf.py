@@ -1,21 +1,21 @@
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_series_equal, assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 
-from ..cheval import LinkedDataFrame
+from wsp_cheval import LinkedDataFrame
 
 vehicles_data = {
-    'household_id': [0, 0, 1, 2, 3],
-    'vehicle_id': [0, 1, 0, 0, 0],
-    'manufacturer': ['Honda', 'Ford', 'Ford', 'Toyota', 'Honda'],
-    'model_year': [2009, 2005, 2015, 2011, 2013],
-    'km_travelled': [103236, 134981, 19015, 75795, 54573]
+    "household_id": [0, 0, 1, 2, 3],
+    "vehicle_id": [0, 1, 0, 0, 0],
+    "manufacturer": ["Honda", "Ford", "Ford", "Toyota", "Honda"],
+    "model_year": [2009, 2005, 2015, 2011, 2013],
+    "km_travelled": [103236, 134981, 19015, 75795, 54573],
 }
 
 households_data = {
-    'household_id': [0, 1, 2, 3],
-    'dwelling_type': ['house', 'apartment', 'house', 'house'],
-    'drivers': [4, 1, 2, 3]
+    "household_id": [0, 1, 2, 3],
+    "dwelling_type": ["house", "apartment", "house", "house"],
+    "drivers": [4, 1, 2, 3],
 }
 
 
@@ -23,8 +23,8 @@ def test_link_to():
     vehicles = LinkedDataFrame(vehicles_data)
     households = LinkedDataFrame(households_data)
 
-    vehicles.link_to(households, 'household', on='household_id')
-    households.link_to(vehicles, 'vehicles', on='household_id')
+    vehicles.link_to(households, "household", on="household_id")
+    households.link_to(vehicles, "vehicles", on="household_id")
 
     test_result = households.vehicles.sum("km_travelled")
 
@@ -37,16 +37,16 @@ def test_slicing():
     vehicles = LinkedDataFrame(vehicles_data)
     households = LinkedDataFrame(households_data)
 
-    vehicles.link_to(households, 'household', on='household_id')
-    households.link_to(vehicles, 'vehicles', on='household_id')
+    vehicles.link_to(households, "household", on="household_id")
+    households.link_to(vehicles, "vehicles", on="household_id")
 
-    mask = vehicles['household_id'] == 0
+    mask = vehicles["household_id"] == 0
     vehicles_subset = vehicles.loc[mask].copy()
-    vehicles_subset['dwelling_type'] = vehicles_subset.household.dwelling_type
+    vehicles_subset["dwelling_type"] = vehicles_subset.household.dwelling_type
 
-    test_result = vehicles_subset['dwelling_type']
+    test_result = vehicles_subset["dwelling_type"]
 
-    expected_result = pd.Series({0: 'house', 1: 'house'}, name='dwelling_type')
+    expected_result = pd.Series({0: "house", 1: "house"}, name="dwelling_type")
 
     assert_series_equal(test_result, expected_result)
 
@@ -55,15 +55,15 @@ def test_evaluate():
     vehicles = LinkedDataFrame(vehicles_data)
     households = LinkedDataFrame(households_data)
 
-    vehicles.link_to(households, 'household', on='household_id')
-    households.link_to(vehicles, 'vehicles', on='household_id')
+    vehicles.link_to(households, "household", on="household_id")
+    households.link_to(vehicles, "vehicles", on="household_id")
 
-    vehicles['multiple_drivers'] = False
-    vehicles.evaluate('where(household.drivers > 1, True, False)', out=vehicles['multiple_drivers'])
+    vehicles["multiple_drivers"] = False
+    vehicles.evaluate("where(household.drivers > 1, True, False)", out=vehicles["multiple_drivers"])
 
-    test_result = vehicles['multiple_drivers']
+    test_result = vehicles["multiple_drivers"]
 
-    expected_result = pd.Series({0: True, 1: True, 2: False, 3: True, 4: True}, name='multiple_drivers')
+    expected_result = pd.Series({0: True, 1: True, 2: False, 3: True, 4: True}, name="multiple_drivers")
 
     assert_series_equal(test_result, expected_result)
 
@@ -76,17 +76,22 @@ def test_link_summary():
     vehicles = LinkedDataFrame(vehicles_data)
     households = LinkedDataFrame(households_data)
 
-    vehicles.link_to(households, 'household', on='household_id')
-    households.link_to(vehicles, 'vehicles', on='household_id')
+    vehicles.link_to(households, "household", on="household_id")
+    households.link_to(vehicles, "vehicles", on="household_id")
 
     test_result = households.link_summary()
 
-    expected_result = pd.DataFrame({
-        'target_shape': {'vehicles': '(5, 5)'}, 'on_self': {'vehicles': "From columns: ['household_id']"},
-        'on_other': {'vehicles': "From columns: ['household_id']"}, 'chained': {'vehicles': True},
-        'aggregation': {'vehicles': True}, 'preindexed': {'vehicles': True}
-    })
-    expected_result.index.name = 'name'
+    expected_result = pd.DataFrame(
+        {
+            "target_shape": {"vehicles": "(5, 5)"},
+            "on_self": {"vehicles": "From columns: ['household_id']"},
+            "on_other": {"vehicles": "From columns: ['household_id']"},
+            "chained": {"vehicles": True},
+            "aggregation": {"vehicles": True},
+            "preindexed": {"vehicles": True},
+        }
+    )
+    expected_result.index.name = "name"
 
     assert_frame_equal(test_result, expected_result)
 
@@ -95,18 +100,19 @@ def test_pivot_table():
     vehicles = LinkedDataFrame(vehicles_data)
     households = LinkedDataFrame(households_data)
 
-    vehicles.link_to(households, 'household', on='household_id')
-    households.link_to(vehicles, 'vehicles', on='household_id')
+    vehicles.link_to(households, "household", on="household_id")
+    households.link_to(vehicles, "vehicles", on="household_id")
 
-    test_result = vehicles.pivot_table(values='vehicle_id', index='manufacturer', columns='household.dwelling_type',
-                                       aggfunc='count', fill_value=0)  # TODO: fails if margins=True, need to fix
+    test_result = vehicles.pivot_table(
+        values="vehicle_id", index="manufacturer", columns="household.dwelling_type", aggfunc="count", fill_value=0
+    )  # TODO: fails if margins=True, need to fix
     test_result.columns = test_result.columns.astype(str)
 
-    expected_result = pd.DataFrame({
-        'apartment': {'Ford': 1, 'Honda': 0, 'Toyota': 0}, 'house': {'Ford': 1, 'Honda': 2, 'Toyota': 1}
-    })
-    expected_result.index.name = 'manufacturer'
-    expected_result.columns.name = 'household.dwelling_type'
+    expected_result = pd.DataFrame(
+        {"apartment": {"Ford": 1, "Honda": 0, "Toyota": 0}, "house": {"Ford": 1, "Honda": 2, "Toyota": 1}}
+    )
+    expected_result.index.name = "manufacturer"
+    expected_result.columns.name = "household.dwelling_type"
 
     assert_frame_equal(test_result, expected_result)
 
@@ -131,29 +137,30 @@ def test_pivot_table_multiindex():
     # A (manufacturer, household.dwelling_type) index may be created by pandas
     # as an internal implementation detail
     n_rows_veh = len(vehicles_data["household_id"])
-    veh_index = pd.MultiIndex.from_arrays([vehicles_data["household_id"], vehicles_data["vehicle_id"],
-                                           [0]*n_rows_veh
-                                           ])
+    veh_index = pd.MultiIndex.from_arrays(
+        [vehicles_data["household_id"], vehicles_data["vehicle_id"], [0] * n_rows_veh]
+    )
     vehicles = LinkedDataFrame(vehicles_data, index=veh_index)
 
     n_rows_hh = len(households_data["household_id"])
-    hh_index = pd.MultiIndex.from_arrays([households_data["household_id"],
-                                          [0]*n_rows_hh, [0]*n_rows_hh, [0]*n_rows_hh
-                                          ])
+    hh_index = pd.MultiIndex.from_arrays(
+        [households_data["household_id"], [0] * n_rows_hh, [0] * n_rows_hh, [0] * n_rows_hh]
+    )
     households = LinkedDataFrame(households_data, index=hh_index)
 
-    vehicles.link_to(households, 'household', on=['household_id'])
-    households.link_to(vehicles, 'vehicles', on=['household_id'])
+    vehicles.link_to(households, "household", on=["household_id"])
+    households.link_to(vehicles, "vehicles", on=["household_id"])
 
-    test_result = vehicles.pivot_table(values='vehicle_id', index='manufacturer', columns='household.dwelling_type',
-                                       aggfunc="sum", fill_value=0.0)
+    test_result = vehicles.pivot_table(
+        values="vehicle_id", index="manufacturer", columns="household.dwelling_type", aggfunc="sum", fill_value=0.0
+    )
     test_result.columns = test_result.columns.astype(str)
 
-    expected_result = pd.DataFrame({
-        'apartment': {'Ford': 0, 'Honda': 0, 'Toyota': 0}, 'house': {'Ford': 1, 'Honda': 0, 'Toyota': 0}
-    })
-    expected_result.index.name = 'manufacturer'
-    expected_result.columns.name = 'household.dwelling_type'
+    expected_result = pd.DataFrame(
+        {"apartment": {"Ford": 0, "Honda": 0, "Toyota": 0}, "house": {"Ford": 1, "Honda": 0, "Toyota": 0}}
+    )
+    expected_result.index.name = "manufacturer"
+    expected_result.columns.name = "household.dwelling_type"
 
     assert_frame_equal(test_result, expected_result)
 
@@ -170,12 +177,12 @@ def test_groupby():
     """
 
     df1_dict = {
-        "df2_id": [  0,   1,   2,   0,   1,   2,   0],
-        "cats":   ["F", "M", "F", "M", "F", "M", "F"],
+        "df2_id": [0, 1, 2, 0, 1, 2, 0],
+        "cats": ["F", "M", "F", "M", "F", "M", "F"],
     }
 
     df2_dict = {
-        "col1":   ["a", "b", "c"],
+        "col1": ["a", "b", "c"],
     }
 
     df1 = LinkedDataFrame(pd.DataFrame(df1_dict))
@@ -203,8 +210,8 @@ def test_bool_columns():
     vehicles = LinkedDataFrame(vehicles_data)
     households = LinkedDataFrame(households_data)
 
-    vehicles.link_to(households, 'household', on='household_id')
-    households.link_to(vehicles, 'vehicles', on='household_id')
+    vehicles.link_to(households, "household", on="household_id")
+    households.link_to(vehicles, "vehicles", on="household_id")
 
     expression = "vehicles.sum(manufacturer=='Honda')"
     test_result = households.evaluate(expression)
@@ -227,9 +234,7 @@ def test_missing_linkage():
     or re-indexing. These test the invariant
     ```ldf[slice][linkage][column] == ldf[linkage][column][slice]```
     """
-    df1 = {
-        "df2_id": [0, 1, 2, 3]
-    }
+    df1 = {"df2_id": [0, 1, 2, 3]}
     df2 = {
         "idx": [0, 1, 2],
         "float_value": [0.0, 1.0, 2.0],

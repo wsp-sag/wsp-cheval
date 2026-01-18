@@ -15,28 +15,28 @@ import pandas as pd
 # check for equality.
 _INT_TYPES = [np.int64, np.int32, int, np.int_, np.int8, np.int16]
 _UINT_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64]
-_FLOAT_TYPES = [np.float64,  np.float32, float, np.float16, np.float32]
+_FLOAT_TYPES = [np.float64, np.float32, float, np.float16, np.float32]
 
 
 class PandasDtype(Enum):
 
-    INT_NAME = 'int'
-    UINT_NAME = 'uint'
-    FLOAT_NAME = 'float'
-    BOOL_NAME = 'bool'
-    TEXT_NAME = 'text'
-    OBJ_NAME = 'object'
-    CAT_NAME = 'category'
-    TIME_NAME = 'datetime'
+    INT_NAME = "int"
+    UINT_NAME = "uint"
+    FLOAT_NAME = "float"
+    BOOL_NAME = "bool"
+    TEXT_NAME = "text"
+    OBJ_NAME = "object"
+    CAT_NAME = "category"
+    TIME_NAME = "datetime"
 
 
 def infer_dtype(s: pd.Series) -> PandasDtype:
     """Returns a simple name for the dtype of a Series. Currently doesn't handle TimeDelta or Time dtypes"""
-    if hasattr(s, 'cat'):
+    if hasattr(s, "cat"):
         return PandasDtype.CAT_NAME
-    if hasattr(s, 'str'):
+    if hasattr(s, "str"):
         return PandasDtype.TEXT_NAME
-    if hasattr(s, 'dt'):
+    if hasattr(s, "dt"):
         return PandasDtype.TIME_NAME
 
     type_to_check = s.dtype
@@ -53,9 +53,14 @@ def infer_dtype(s: pd.Series) -> PandasDtype:
 
 
 _default_fills = {
-    PandasDtype.INT_NAME: 0, PandasDtype.UINT_NAME: 0, PandasDtype.FLOAT_NAME: np.nan, PandasDtype.BOOL_NAME: False,
-    PandasDtype.TEXT_NAME: '', PandasDtype.CAT_NAME: np.nan, PandasDtype.TIME_NAME: np.datetime64('nat'),
-    PandasDtype.OBJ_NAME: None
+    PandasDtype.INT_NAME: 0,
+    PandasDtype.UINT_NAME: 0,
+    PandasDtype.FLOAT_NAME: np.nan,
+    PandasDtype.BOOL_NAME: False,
+    PandasDtype.TEXT_NAME: "",
+    PandasDtype.CAT_NAME: np.nan,
+    PandasDtype.TIME_NAME: np.datetime64("nat"),
+    PandasDtype.OBJ_NAME: None,
 }
 
 
