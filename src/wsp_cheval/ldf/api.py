@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+__all__ = [
+    "LinkedDataFrame",
+]
+
 from collections import deque
-from typing import (Any, Deque, Dict, Hashable, List, Optional, Set, Tuple,
-                    Type, Union)
+from typing import Any, Deque, Dict, Hashable, List, Optional, Set, Tuple, Type, Union
 
 import attr
 import numexpr as ne
@@ -28,7 +31,6 @@ _NUMERIC_TYPES = {PandasDtype.INT_NAME, PandasDtype.UINT_NAME, PandasDtype.FLOAT
 
 
 class _IndexMeta:
-
     labels: List[str] = attr.ib(converter=lambda x: [x] if isinstance(x, str) else list(x))
     from_row_labels: bool = attr.ib()
 
@@ -213,7 +215,6 @@ class _LinkMeta:
 
 
 class LinkedDataFrame(DataFrame):
-
     _links: Dict[str, _LinkMeta]
     _identified_links: Set[str]
     _class_filler: SeriesFillManager = SeriesFillManager()
@@ -462,7 +463,6 @@ class LinkedDataFrame(DataFrame):
     # region Link Node Classes
 
     class _BaseNode:
-
         _root_index: Index
         _history: Deque[_LinkMeta]
 

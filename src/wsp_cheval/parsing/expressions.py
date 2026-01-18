@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+__all__ = [
+    "Expression",
+]
+
 import ast
 from typing import Dict, Optional, Set, Tuple
 

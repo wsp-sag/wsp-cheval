@@ -1,5 +1,11 @@
 """Module for AST Transformer subclass which specially-parses utility expressions"""
 
+from __future__ import annotations
+
+__all__ = [
+    "ExpressionParser",
+]
+
 import ast
 from collections import deque
 from typing import Dict, Set, Tuple, Union
@@ -31,7 +37,6 @@ Number = Union[int, float, np.float64]
 
 
 class ExpressionParser(ast.NodeTransformer):
-
     def __init__(self, prior_simple: Set[str] = None, prior_chained: Set[str] = None, mode=EvaluationMode.UTILITIES):
         self.mode: EvaluationMode = mode
 
@@ -186,7 +191,6 @@ class ExpressionParser(ast.NodeTransformer):
         new_node = ast.Name(substitution, ast.Load())
 
         try:
-
             new_literal = {}
             for key_node, val_node in zip(node.keys, node.values):
                 new_key = self.__get_dict_key(key_node)

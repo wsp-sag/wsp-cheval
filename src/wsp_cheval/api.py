@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+__all__ = [
+    "ChoiceNode",
+    "ExpressionGroup",
+]
+
 import abc
 from collections import deque
-from typing import (TYPE_CHECKING, Dict, Generator, Hashable, List, Optional,
-                    Set, Union)
+from typing import TYPE_CHECKING, Dict, Generator, Hashable, List, Optional, Set, Union
 
 import attr
 import numpy as np
@@ -22,7 +26,6 @@ if TYPE_CHECKING:
 
 
 class ChoiceNode(object):
-
     def __init__(
         self,
         root: ChoiceModel,
@@ -156,7 +159,6 @@ class ExpressionSubGroup:
 
 
 class ExpressionGroup(object):
-
     def __init__(self):
         self._ungrouped_expressions: List[Expression] = []
         self._simple_symbols: Set[str] = set()
@@ -322,7 +324,6 @@ class NumberSymbol(AbstractSymbol):
 
 
 class VectorSymbol(AbstractSymbol):
-
     def __init__(
         self,
         parent: ChoiceModel,
@@ -367,7 +368,6 @@ class VectorSymbol(AbstractSymbol):
     def copy(self, new_parent: ChoiceModel, copy_data, row_mask):
         new = VectorSymbol(new_parent, self._name, self._orientation)
         if copy_data and self._raw_array is not None:
-
             if self._orientation == 0 and row_mask is not None:
                 new_array = self._raw_array[row_mask]
             else:
@@ -383,7 +383,6 @@ class VectorSymbol(AbstractSymbol):
 
 
 class TableSymbol(AbstractSymbol):
-
     def __init__(
         self,
         parent: ChoiceModel,
@@ -459,7 +458,6 @@ class TableSymbol(AbstractSymbol):
 
 
 class MatrixSymbol(AbstractSymbol):
-
     def __init__(
         self,
         parent: ChoiceModel,
@@ -485,7 +483,6 @@ class MatrixSymbol(AbstractSymbol):
             data = data.transpose()
 
         if isinstance(data, pd.DataFrame):
-
             rows_match = data.index is rows or rows.equals(data.index)
             cols_match = data.columns is cols or cols.equals(data.columns)
 
