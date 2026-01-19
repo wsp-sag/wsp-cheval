@@ -2,6 +2,28 @@
 
 from __future__ import annotations
 
+__all__ = [
+    "UtilityBoundsError",
+    "fast_indexed_add",
+    "logarithmic_search",
+    "multinomial_probabilities",
+    "multinomial_sample",
+    "multinomial_multisample",
+    "nested_probabilities",
+    "nested_sample",
+    "nested_multisample",
+    "sample_once",
+    "sample_multi",
+    "simple_probabilities",
+    "simple_sample",
+    "simple_multisample",
+    "worker_multinomial_probabilities",
+    "worker_multinomial_sample",
+    "worker_nested_probabilities",
+    "worker_nested_sample",
+    "worker_weighted_sample",
+]
+
 from typing import Tuple
 
 import numpy as np
@@ -9,9 +31,8 @@ from numba import boolean as nbool
 from numba import float32 as nfloat
 from numba import float64 as ndouble
 from numba import int64 as nlong
-from numba import njit
+from numba import njit, prange, void
 from numba import optional as maybe
-from numba import prange, void
 from numba.core.types import Tuple as NTuple
 from numpy.typing import NDArray
 
@@ -376,13 +397,21 @@ def worker_weighted_sample(weights: NDArray, n: int, seed: int) -> NDArray:
         for i in prange(n_rows):
             weight_row = weights[i, :]
             r = r_array[i]
-            result[i, 0] = simple_sample(weight_row, r)
+            result[i, 0] = simple_sample(
+                weight_row,
+                r,
+            )
     else:
         seed_array = np.random.randint(0, MAX_RANDOM_VALUE, n_rows)
         for i in prange(n_rows):
             weight_row = weights[i, :]
             seed_i = seed_array[i]
-            _, ls = simple_multisample(weight_row, n, seed_i, result[i, :])
+            _, ls = simple_multisample(
+                weight_row,
+                n,
+                seed_i,
+                result[i, :],
+            )
     return result
 
 
@@ -406,14 +435,22 @@ def worker_multinomial_sample(utilities: NDArray, n: int, seed: int) -> Tuple[ND
         for i in prange(n_rows):
             utility_row = utilities[i, :]
             r = r_array[i]
-            result[i, 0], ls = multinomial_sample(utility_row, r)
+            result[i, 0], ls = multinomial_sample(
+                utility_row,
+                r,
+            )
             ls_array[i] = ls
     else:
         seed_array = generate_rand_ints_for_parallel(seed, n_rows)
         for i in prange(n_rows):
             utility_row = utilities[i, :]
             seed_i = seed_array[i]
-            _, ls = multinomial_multisample(utility_row, n, seed_i, result[i, :])
+            _, ls = multinomial_multisample(
+                utility_row,
+                n,
+                seed_i,
+                result[i, :],
+            )
             ls_array[i] = ls
     return result, ls_array
 
@@ -436,7 +473,10 @@ def worker_multinomial_probabilities(utilities: NDArray, check_infeasible: bool)
 
     for i in prange(n_rows):
         utility_row = utilities[i, :]
-        p_array, top_ls, nested_ls = multinomial_probabilities(utility_row, check_infeasible)
+        p_array, top_ls, nested_ls = multinomial_probabilities(
+            utility_row,
+            check_infeasible,
+        )
         result[i, :] = p_array
         top_ls_array[i] = top_ls
         nested_ls_terms[i, :] = nested_ls
@@ -473,7 +513,15 @@ def worker_nested_sample(
         for i in prange(n_rows):
             utility_row = utilities[i, :]
             r = r_array[i]
-            this_result, ls = nested_sample(utility_row, r, parents, levels, ls_scales, bottom_flags, scale_utilities)
+            this_result, ls = nested_sample(
+                utility_row,
+                r,
+                parents,
+                levels,
+                ls_scales,
+                bottom_flags,
+                scale_utilities,
+            )
             result[i, 0] = this_result
             ls_array[i] = ls
     else:
@@ -482,7 +530,15 @@ def worker_nested_sample(
             utility_row = utilities[i, :]
             seed_i = seed_array[i]
             _, ls = nested_multisample(
-                utility_row, parents, levels, ls_scales, bottom_flags, n, seed_i, scale_utilities, out=result[i, :]
+                utility_row,
+                parents,
+                levels,
+                ls_scales,
+                bottom_flags,
+                n,
+                seed_i,
+                scale_utilities,
+                out=result[i, :],
             )
             ls_array[i] = ls
     return result, ls_array
@@ -519,7 +575,13 @@ def worker_nested_probabilities(
     for i in prange(n_rows):
         utility_row = utilities[i, :]
         p_array, top_ls, nested_ls = nested_probabilities(
-            utility_row, parents, levels, ls_scales, bottom_flags, scale_utilities, check_infeasible
+            utility_row,
+            parents,
+            levels,
+            ls_scales,
+            bottom_flags,
+            scale_utilities,
+            check_infeasible,
         )
         result[i, :] = p_array
         top_ls_array[i] = top_ls

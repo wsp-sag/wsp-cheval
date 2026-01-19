@@ -34,7 +34,8 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
     "build>=1.1,<2",
-    "twine>=4.0,<7"
+    "pytest>=7.4.4",
+    "twine>=4.0,<7",
 ]
 
 [tool.setuptools.packages.find]
@@ -48,3 +49,7 @@ addopts = [
     "--import-mode=importlib",
 ]
 pythonpath = "src"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"

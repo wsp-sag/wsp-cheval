@@ -1,5 +1,10 @@
 """Common constants & exception classes for LDF"""
 
+__all__ = [
+    "LinkageSpecificationError",
+    "LinkAggregationRequired",
+]
+
 from enum import Flag
 
 

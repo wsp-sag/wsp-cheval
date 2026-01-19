@@ -1,3 +1,9 @@
+__all__ = [
+    "UnsupportedSyntaxError",
+    "ModelNotReadyError",
+]
+
+
 class UnsupportedSyntaxError(SyntaxError):
     pass
 

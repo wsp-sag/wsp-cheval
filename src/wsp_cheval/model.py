@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+__all__ = [
+    "ChoiceModel",
+]
+
 from itertools import chain as iter_chain
 from logging import Logger
 from multiprocessing import cpu_count
@@ -12,22 +16,36 @@ import pandas as pd
 from numpy.random import RandomState
 from numpy.typing import DTypeLike, NDArray
 
-from .api import (AbstractSymbol, ChoiceNode, ExpressionGroup,
-                  ExpressionSubGroup, MatrixSymbol, NumberSymbol, TableSymbol,
-                  VectorSymbol)
-from .core import (UtilityBoundsError, fast_indexed_add,
-                   worker_multinomial_probabilities, worker_multinomial_sample,
-                   worker_nested_probabilities, worker_nested_sample)
+from .api import (
+    AbstractSymbol,
+    ChoiceNode,
+    ExpressionGroup,
+    ExpressionSubGroup,
+    MatrixSymbol,
+    NumberSymbol,
+    TableSymbol,
+    VectorSymbol,
+)
+from .core import (
+    UtilityBoundsError,
+    fast_indexed_add,
+    worker_multinomial_probabilities,
+    worker_multinomial_sample,
+    worker_nested_probabilities,
+    worker_nested_sample,
+)
 from .exceptions import ModelNotReadyError
-from .parsing.constants import (NAN_STR, NEG_INF_STR, NEG_INF_VAL, OUT_STR,
-                                RESERVED_WORDS)
+from .parsing.constants import NAN_STR, NEG_INF_STR, NEG_INF_VAL, OUT_STR, RESERVED_WORDS
 from .utils import to_numpy
 
 
 class ChoiceModel(object):
-
-    def __init__(self, *, precision: int = 8, debug_id: Tuple[int, int] = None):
-
+    def __init__(
+        self,
+        *,
+        precision: int = 8,
+        debug_id: Optional[Tuple[int, int]] = None,
+    ) -> None:
         # Tree data
         self._max_level: int = 0
         self._all_nodes: Dict[str, ChoiceNode] = {}
@@ -46,9 +64,9 @@ class ChoiceModel(object):
 
         # Other
         self._precision: int = 0
-        self.precision: int = precision
+        self.precision = precision
 
-        self.debug_id: Optional[Tuple[int, int]] = debug_id  # debug_id must be a valid label used to search an Index
+        self.debug_id = debug_id  # debug_id must be a valid label used to search an Index
         self.debug_results: Optional[pd.DataFrame] = None
 
     @property
@@ -74,9 +92,19 @@ class ChoiceModel(object):
             table = self._cached_utils
         return table
 
+    @property
+    def partial_utilities(self) -> pd.DataFrame:
+        """Get a copy of the partial utilties table"""
+        return self._partial_utilities.copy(deep=True)
+
     # region Tree operations
 
-    def _create_node(self, name: str, logsum_scale: float, parent: ChoiceNode = None) -> ChoiceNode:
+    def _create_node(
+        self,
+        name: str,
+        logsum_scale: float,
+        parent: Optional[ChoiceNode] = None,
+    ) -> ChoiceNode:
         expected_namespace = name
         if parent is None and name in self._all_nodes:
             old_node = self._all_nodes.pop(name)  # Remove from model dictionary
@@ -92,7 +120,11 @@ class ChoiceModel(object):
 
         return node
 
-    def add_choice(self, name: str, logsum_scale: float = 1.0) -> ChoiceNode:
+    def add_choice(
+        self,
+        name: str,
+        logsum_scale: float = 1.0,
+    ) -> ChoiceNode:
         """Create and add a new discrete choice to the model, at the top level. Returns a node object which can also add
         nested choices, and so on. Choice names must only be unique within a given nest, although for clarity it is
         recommended that choice names are unique across all nests (especially when sampling afterwards).
@@ -117,7 +149,11 @@ class ChoiceModel(object):
         self._top_nodes.add(node)
         return node
 
-    def add_choices(self, names: Iterable[str], logsum_scales: Iterable[float] = None) -> Dict[str, ChoiceNode]:
+    def add_choices(
+        self,
+        names: Iterable[str],
+        logsum_scales: Optional[Iterable[float]] = None,
+    ) -> Dict[str, ChoiceNode]:
         """Convenience function for batch-adding several choices at once (for a multinomial logit model). See
         ``add_choice()`` for more details.
 
@@ -226,7 +262,7 @@ class ChoiceModel(object):
         return self._decision_units
 
     @decision_units.setter
-    def decision_units(self, item):
+    def decision_units(self, item: Union[pd.Index, Iterable]) -> None:
         """The units or agents or OD pairs over which choices are to be evaluated. MUST BE SET before symbols can be
         assigned, or utilities calculated; otherwise ModelNotReadyError will be raised."""
 
@@ -242,18 +278,25 @@ class ChoiceModel(object):
             self._decision_units = pd.Index(item)
 
     @staticmethod
-    def _check_symbol_name(name: str):
+    def _check_symbol_name(name: str) -> None:
         # TODO: Check function names from NumExpr
         if name in RESERVED_WORDS:
             raise SyntaxError(f"Symbol name `{name}` cannot be used as it is a reserved keyword.")
 
-    def declare_number(self, name: str):
+    def declare_number(
+        self,
+        name: str,
+    ) -> None:
         """Declares a simple scalar variable, of number, boolean, or text type"""
         self._check_symbol_name(name)
         symbol = NumberSymbol(self, name)
         self._scope[name] = symbol
 
-    def declare_vector(self, name: str, orientation: int):
+    def declare_vector(
+        self,
+        name: str,
+        orientation: int,
+    ) -> None:
         """Declares a vector variable. Vectors can be aligned with the decision units (rows, orientation=0) or choices
         (columns, orientation=1). Supports NumPy arrays or Pandas Series objects.
 
@@ -268,9 +311,9 @@ class ChoiceModel(object):
         self,
         name: str,
         orientation: int,
-        mandatory_attributes: Set[str] = None,
+        mandatory_attributes: Optional[Set[str]] = None,
         allow_links: bool = True,
-    ):
+    ) -> None:
         """Declares a table variable. Similar to vectors, tables can align with either the decision units (rows,
         orientation=0) or choices (columns, orientation=1), but allow for more complex attribute lookups. For ideal
         usage, all columns in the specified table should be valid Python variable names, as otherwise "dotted" access
@@ -292,7 +335,7 @@ class ChoiceModel(object):
         reindex_cols: bool = True,
         reindex_rows: bool = True,
         fill_value: Any = 0,
-    ):
+    ) -> None:
         """Declares a matrix that fully or partially aligns with the rows or columns. This is useful when manual control
         is needed over both the decision units and the choices. Only DataFrames are supported.
 
@@ -315,7 +358,7 @@ class ChoiceModel(object):
         """Gets a declared symbol to be assigned"""
         return self._scope[item]
 
-    def clear_scope(self):
+    def clear_scope(self) -> None:
         self._scope.clear()
 
     @property
@@ -323,7 +366,7 @@ class ChoiceModel(object):
         return self._expressions
 
     @expressions.setter
-    def expressions(self, item):
+    def expressions(self, item: Union[ExpressionGroup, Iterable[str]]) -> None:
         for expr in item:
             self._expressions.append(expr)
 
@@ -337,8 +380,8 @@ class ChoiceModel(object):
         decision_units: bool = True,
         expressions: bool = True,
         assignment: bool = True,
-        group: Hashable = None,
-    ):
+        group: Optional[Hashable] = None,
+    ) -> None:
         """Checks that the model components are self-consistent and that the model is ready to run. Optionally, some
         components can be skipped, in order to partially validate a model under construction.
 
@@ -385,14 +428,14 @@ class ChoiceModel(object):
     def run_discrete(
         self,
         *,
-        random_seed: Union[int, RandomState] = None,
+        random_seed: Optional[Union[int, RandomState]] = None,
         n_draws: int = 1,
         astype: Union[str, DTypeLike] = "category",
         squeeze: bool = True,
         n_threads: int = 1,
         clear_scope: bool = True,
-        result_name: str = None,
-        logger: Logger = None,
+        result_name: Optional[str] = None,
+        logger: Optional[Logger] = None,
         scale_utilities: bool = True,
     ) -> Tuple[Union[pd.DataFrame, pd.Series], pd.Series]:
         """For each decision unit, discretely sample one or more times (with replacement) from the probability
@@ -449,17 +492,28 @@ class ChoiceModel(object):
         if nested:
             hierarchy, levels, logsum_scales, bottom_flags = self._flatten()
             raw_result, logsum = worker_nested_sample(
-                utility_table, hierarchy, levels, logsum_scales, bottom_flags, n_draws, random_seed, scale_utilities
+                utility_table,
+                hierarchy,
+                levels,
+                logsum_scales,
+                bottom_flags,
+                n_draws,
+                random_seed,
+                scale_utilities,
             )
         else:
-            raw_result, logsum = worker_multinomial_sample(utility_table, n_draws, random_seed)
+            raw_result, logsum = worker_multinomial_sample(
+                utility_table,
+                n_draws,
+                random_seed,
+            )
 
         # Finalize results
         logsum = pd.Series(logsum, index=self.decision_units)
         result = self._convert_result(raw_result, astype, squeeze, result_name)
         return result, logsum
 
-    def _make_column_mask(self, filter_: str) -> Union[int, None]:
+    def _make_column_mask(self, filter_: Optional[str]) -> Optional[int]:
         if filter_ is None:
             return None
         col_index = self.choices
@@ -477,9 +531,9 @@ class ChoiceModel(object):
     def _evaluate_utilities(
         self,
         expressions: Union[ExpressionGroup, ExpressionSubGroup],
-        n_threads: int = None,
-        logger: Logger = None,
-        allow_casting=True,
+        n_threads: Optional[int] = None,
+        logger: Optional[Logger] = None,
+        allow_casting: bool = True,
     ) -> pd.DataFrame:
         if self._decision_units is None:
             raise ModelNotReadyError("Decision units must be set before evaluating utility expressions")
@@ -547,8 +601,12 @@ class ChoiceModel(object):
 
     @staticmethod
     def _kernel_eval(
-        transformed_expr: str, local_dict: Dict[str, NDArray], out: NDArray, column_index, casting_rule="same_kind"
-    ):
+        transformed_expr: str,
+        local_dict: Dict[str, NDArray],
+        out: NDArray,
+        column_index: Optional[int],
+        casting_rule: str = "same_kind",
+    ) -> None:
         if column_index is not None:
             for key, val in local_dict.items():
                 if hasattr(val, "shape"):
@@ -562,7 +620,11 @@ class ChoiceModel(object):
         ne.evaluate(expr_to_run, local_dict=local_dict, out=out, casting=casting_rule)
 
     def _convert_result(
-        self, raw_result: NDArray, astype, squeeze: bool, result_name: str
+        self,
+        raw_result: NDArray,
+        astype: Union[str, DTypeLike],
+        squeeze: bool,
+        result_name: Optional[str],
     ) -> Union[pd.Series, pd.DataFrame]:
         n_draws = raw_result.shape[1]
         column_index = pd.RangeIndex(n_draws, name=result_name)
@@ -594,8 +656,8 @@ class ChoiceModel(object):
         *,
         n_threads: int = 1,
         clear_scope: bool = True,
-        logger: Logger = None,
-        group: Hashable = None,
+        logger: Optional[Logger] = None,
+        group: Optional[Hashable] = None,
         scale_utilities: bool = True,
         check_infeasible: bool = True,
     ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
@@ -641,14 +703,33 @@ class ChoiceModel(object):
         if nested:
             hierarchy, levels, logsum_scales, bottom_flags = self._flatten()
             raw_result, top_lvl_ls, nested_ls = worker_nested_probabilities(
-                utility_table, hierarchy, levels, logsum_scales, bottom_flags, scale_utilities, check_infeasible
+                utility_table,
+                hierarchy,
+                levels,
+                logsum_scales,
+                bottom_flags,
+                scale_utilities,
+                False,  # We will check infeasibility manually below
             )
             result_frame = self._build_nested_stochastic_frame(raw_result)
         else:
-            raw_result, top_lvl_ls, nested_ls = worker_multinomial_probabilities(utility_table, check_infeasible)
+            raw_result, top_lvl_ls, nested_ls = worker_multinomial_probabilities(
+                utility_table,
+                False,  # We will check infeasibility manually below
+            )
             result_frame = pd.DataFrame(raw_result, index=self.decision_units, columns=self.choices)
         top_lvl_ls = pd.Series(top_lvl_ls, index=self.decision_units)
         nested_ls = pd.DataFrame(nested_ls, index=self.decision_units, columns=self.choices)
+
+        if check_infeasible:
+            mask_infeasible = top_lvl_ls <= 0.0
+            if np.sum(mask_infeasible) > 0:
+                infeasible_utilities = pd.DataFrame(
+                    utility_table[mask_infeasible], index=self.decision_units[mask_infeasible], columns=self.choices
+                )
+                raise UtilityBoundsError(
+                    f"Found {np.sum(mask_infeasible)} decision units with no feasible choices (top-level logsum <= 0.0)"
+                )
 
         return result_frame, top_lvl_ls, nested_ls
 
@@ -668,11 +749,11 @@ class ChoiceModel(object):
     def preval(
         self,
         group: Hashable,
-        n_threads: int = None,
-        logger: Logger = None,
+        n_threads: Optional[int] = None,
+        logger: Optional[Logger] = None,
         drop_group: bool = True,
         cleanup_scope: bool = True,
-    ):
+    ) -> None:
         """When using expression groups, "pre-evaluate" the utility expressions for a specified group, caching the
         utility table on the ChoiceModel.
 
@@ -810,7 +891,7 @@ class ChoiceModel(object):
         table: pd.DataFrame,
         reindex_rows: bool = False,
         reindex_columns: bool = True,
-    ):
+    ) -> None:
         """Optimized function for adding partial utilities to the cached table from an external source. Faster than
         declaring a matrix symbol.
 

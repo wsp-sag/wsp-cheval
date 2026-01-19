@@ -1,5 +1,12 @@
 """Collection of common classes to store more complex substitutions (e.g. LinkedDataFrame lookup)"""
 
+from __future__ import annotations
+
+__all__ = [
+    "ChainedSymbol",
+    "EvaluationMode",
+]
+
 from collections import deque, namedtuple
 from enum import Enum
 from typing import Dict, Generator, Tuple
@@ -8,7 +15,6 @@ ChainTuple = namedtuple("ChainTuple", ["chain", "func", "args", "withfunc"])
 
 
 class ChainedSymbol(object):
-
     def __init__(self, name: str):
         self._name: str = name
         self._lookups: Dict[str, ChainTuple] = {}
