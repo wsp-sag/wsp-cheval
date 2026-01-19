@@ -709,13 +709,13 @@ class ChoiceModel(object):
                 logsum_scales,
                 bottom_flags,
                 scale_utilities,
-                False,
+                False,  # We will check infeasibility manually below
             )
             result_frame = self._build_nested_stochastic_frame(raw_result)
         else:
             raw_result, top_lvl_ls, nested_ls = worker_multinomial_probabilities(
                 utility_table,
-                False,
+                False,  # We will check infeasibility manually below
             )
             result_frame = pd.DataFrame(raw_result, index=self.decision_units, columns=self.choices)
         top_lvl_ls = pd.Series(top_lvl_ls, index=self.decision_units)
