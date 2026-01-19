@@ -722,10 +722,13 @@ class ChoiceModel(object):
         nested_ls = pd.DataFrame(nested_ls, index=self.decision_units, columns=self.choices)
 
         if check_infeasible:
-            infeasible = top_lvl_ls[top_lvl_ls <= 0.0]
-            if not infeasible.empty:
+            mask_infeasible = top_lvl_ls <= 0.0
+            if np.sum(mask_infeasible) > 0:
+                infeasible_utilities = pd.DataFrame(
+                    utility_table[mask_infeasible], index=self.decision_units[mask_infeasible], columns=self.choices
+                )
                 raise UtilityBoundsError(
-                    f"Found {len(infeasible)} decision units with no feasible choices (top-level logsum <= 0.0)"
+                    f"Found {np.sum(mask_infeasible)} decision units with no feasible choices (top-level logsum <= 0.0)"
                 )
 
         return result_frame, top_lvl_ls, nested_ls
