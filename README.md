@@ -16,7 +16,7 @@ Cheval contains two main components:
 
 These components can be used together or separately.
 
-Cheval is compatible with Python 3.7+
+Cheval is compatible with Python 3.10
 
 ## Installation
 
